@@ -9,7 +9,6 @@
 #include "util.h"
 #include "ClientContext.h"
 #include "SOCKS.h"
-#include "WebSocks.h"
 #include "MatchedDestination.h"
 
 namespace i2p
@@ -466,7 +465,6 @@ namespace client
 				std::string type = section.second.get<std::string> (I2P_TUNNELS_SECTION_TYPE);
 				if (type == I2P_TUNNELS_SECTION_TYPE_CLIENT
 						|| type == I2P_TUNNELS_SECTION_TYPE_SOCKS
-						|| type == I2P_TUNNELS_SECTION_TYPE_WEBSOCKS
 						|| type == I2P_TUNNELS_SECTION_TYPE_HTTPPROXY
 						|| type == I2P_TUNNELS_SECTION_TYPE_UDPCLIENT)
 				{
@@ -537,13 +535,6 @@ namespace client
 							auto tun = std::make_shared<i2p::proxy::HTTPProxy>(name, address, port, outproxy, localDestination);
 							clientTunnel = tun;
 							clientEndpoint = tun->GetLocalEndpoint ();
-						}
-						else if (type == I2P_TUNNELS_SECTION_TYPE_WEBSOCKS)
-						{
-							// websocks proxy
-							auto tun = std::make_shared<WebSocks>(address, port, localDestination);
-							clientTunnel = tun;
-							clientEndpoint = tun->GetLocalEndpoint();
 						}
 						else
 						{

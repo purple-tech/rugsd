@@ -27,7 +27,6 @@ namespace client
 	const char I2P_TUNNELS_SECTION_TYPE_UDPCLIENT[] = "udpclient";
 	const char I2P_TUNNELS_SECTION_TYPE_UDPSERVER[] = "udpserver";
 	const char I2P_TUNNELS_SECTION_TYPE_SOCKS[] = "socks";
-	const char I2P_TUNNELS_SECTION_TYPE_WEBSOCKS[] = "websocks";
 	const char I2P_TUNNELS_SECTION_TYPE_HTTPPROXY[] = "httpproxy";
 	const char I2P_CLIENT_TUNNEL_PORT[] = "port";
 	const char I2P_CLIENT_TUNNEL_ADDRESS[] = "address";
