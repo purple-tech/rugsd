@@ -83,21 +83,6 @@ namespace data
 					memcpy (m_StandardIdentity.signingKey + padding, signingKey, i2p::crypto::EDDSA25519_PUBLIC_KEY_LENGTH);
 					break;
 				}
-				case SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256:
-				{
-					// 256
-					size_t padding = 128 - i2p::crypto::GOSTR3410_256_PUBLIC_KEY_LENGTH; // 64 = 128 - 64
-					RAND_bytes (m_StandardIdentity.signingKey, padding);
-					memcpy (m_StandardIdentity.signingKey + padding, signingKey, i2p::crypto::GOSTR3410_256_PUBLIC_KEY_LENGTH);
-					break;
-				}
-				case SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512:
-				{
-					// 512
-					// no padding, key length is 128
-					memcpy (m_StandardIdentity.signingKey, signingKey, i2p::crypto::GOSTR3410_512_PUBLIC_KEY_LENGTH);
-					break;
-				}
 				default:
 					LogPrint (eLogError, "Identity: Signing key type ", (int)type, " is not supported");
 			}
@@ -359,18 +344,6 @@ namespace data
 				UpdateVerifier (new i2p::crypto::EDDSA25519Verifier (m_StandardIdentity.signingKey + padding));
 				break;
 			}
-			case SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256:
-			{
-				size_t padding =  128 - i2p::crypto::GOSTR3410_256_PUBLIC_KEY_LENGTH; // 64 = 128 - 64
-				UpdateVerifier (new i2p::crypto::GOSTR3410_256_Verifier (i2p::crypto::eGOSTR3410CryptoProA, m_StandardIdentity.signingKey + padding));
-				break;
-			}
-			case SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512:
-			{
-				// zero padding
-				UpdateVerifier (new i2p::crypto::GOSTR3410_512_Verifier (i2p::crypto::eGOSTR3410TC26A512, m_StandardIdentity.signingKey));
-				break;
-			}
 			default:
 				LogPrint (eLogError, "Identity: Signing key type ", (int)keyType, " is not supported");
 		}
@@ -418,9 +391,6 @@ namespace data
 			case CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC:
 			case CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC_TEST:
 				return std::make_shared<i2p::crypto::ECIESP256Encryptor>(key);
-			break;
-			case CRYPTO_KEY_TYPE_ECIES_GOSTR3410_CRYPTO_PRO_A_SHA256_AES256CBC:
-				return std::make_shared<i2p::crypto::ECIESGOSTR3410Encryptor>(key);
 			break;
 			default:
 				LogPrint (eLogError, "Identity: Unknown crypto key type ", (int)GetCryptoKeyType ());
@@ -530,12 +500,6 @@ namespace data
 			case SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519:
 				m_Signer.reset (new i2p::crypto::EDDSA25519Signer (m_SigningPrivateKey, m_Public->GetStandardIdentity ().certificate - i2p::crypto::EDDSA25519_PUBLIC_KEY_LENGTH));
 			break;
-			case SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256:
-				m_Signer.reset (new i2p::crypto::GOSTR3410_256_Signer (i2p::crypto::eGOSTR3410CryptoProA, m_SigningPrivateKey));
-			break;
-			case SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512:
-				m_Signer.reset (new i2p::crypto::GOSTR3410_512_Signer (i2p::crypto::eGOSTR3410TC26A512, m_SigningPrivateKey));
-			break;
 			default:
 				LogPrint (eLogError, "Identity: Signing key type ", (int)m_Public->GetSigningKeyType (), " is not supported");
 		}
@@ -566,9 +530,6 @@ namespace data
 			case CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC:
 			case CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC_TEST:
 				return std::make_shared<i2p::crypto::ECIESP256Decryptor>(key);
-			break;
-			case CRYPTO_KEY_TYPE_ECIES_GOSTR3410_CRYPTO_PRO_A_SHA256_AES256CBC:
-				return std::make_shared<i2p::crypto::ECIESGOSTR3410Decryptor>(key);
 			break;
 			default:
 				LogPrint (eLogError, "Identity: Unknown crypto key type ", (int)cryptoType);
@@ -602,12 +563,6 @@ namespace data
 				case SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519:
 					i2p::crypto::CreateEDDSA25519RandomKeys (keys.m_SigningPrivateKey, signingPublicKey);
 				break;
-				case SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256:
-					i2p::crypto::CreateGOSTR3410RandomKeys (i2p::crypto::eGOSTR3410CryptoProA, keys.m_SigningPrivateKey, signingPublicKey);
-				break;
-				case SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512:
-					i2p::crypto::CreateGOSTR3410RandomKeys (i2p::crypto::eGOSTR3410TC26A512, keys.m_SigningPrivateKey, signingPublicKey);
-				break;
 				default:
 					LogPrint (eLogWarning, "Identity: Signing key type ", (int)type, " is not supported. Create DSA-SHA1");
 					return PrivateKeys (i2p::data::CreateRandomKeys ()); // DSA-SHA1
@@ -634,9 +589,6 @@ namespace data
 			case CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC:
 			case CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC_TEST:
 				i2p::crypto::CreateECIESP256RandomKeys (priv, pub);
-			break;
-			case CRYPTO_KEY_TYPE_ECIES_GOSTR3410_CRYPTO_PRO_A_SHA256_AES256CBC:
-				i2p::crypto::CreateECIESGOSTR3410RandomKeys (priv, pub);
 			break;
 			default:
 				LogPrint (eLogError, "Identity: Crypto key type ", (int)type, " is not supported");

@@ -63,13 +63,6 @@ public:
         addItem(signatureTypeCombobox, QApplication::translate("signatureTypeCombobox", "EDDSA_SHA512_ED25519PH", 0), SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519ph); //8
         if(selectedSigType==SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519ph){signatureTypeCombobox->setCurrentIndex(index);foundSelected=true;}
         ++index;
-        // the following signature type should never appear in netid=2
-        addItem(signatureTypeCombobox, QApplication::translate("signatureTypeCombobox", "GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256", 0), SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256); //9
-        if(selectedSigType==SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256){signatureTypeCombobox->setCurrentIndex(index);foundSelected=true;}
-        ++index;
-        addItem(signatureTypeCombobox, QApplication::translate("signatureTypeCombobox", "GOSTR3410_TC26_A_512_GOSTR3411_512", 0), SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512); //10
-        if(selectedSigType==SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512){signatureTypeCombobox->setCurrentIndex(index);foundSelected=true;}
-        ++index;
         if(!foundSelected){
             addItem(signatureTypeCombobox, QString::number(selectedSigType), selectedSigType); //unknown sigtype
             signatureTypeCombobox->setCurrentIndex(index);

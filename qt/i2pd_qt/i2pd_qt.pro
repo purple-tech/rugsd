@@ -38,7 +38,6 @@ SOURCES += DaemonQT.cpp mainwindow.cpp \
     ../../libi2pd/Family.cpp \
     ../../libi2pd/FS.cpp \
     ../../libi2pd/Garlic.cpp \
-    ../../libi2pd/Gost.cpp \
     ../../libi2pd/Gzip.cpp \
     ../../libi2pd/HTTP.cpp \
     ../../libi2pd/I2NPProtocol.cpp \
@@ -121,7 +120,6 @@ HEADERS  += DaemonQT.h mainwindow.h \
     ../../libi2pd/Family.h \
     ../../libi2pd/FS.h \
     ../../libi2pd/Garlic.h \
-    ../../libi2pd/Gost.h \
     ../../libi2pd/Gzip.h \
     ../../libi2pd/HTTP.h \
     ../../libi2pd/I2NPProtocol.h \

@@ -82,36 +82,6 @@ namespace crypto
 
 	void CreateECIESP256RandomKeys (uint8_t * priv, uint8_t * pub);
 
-// ECIES GOST R 34.10
-
-	class ECIESGOSTR3410Encryptor: public CryptoKeyEncryptor
-	{
-		public:
-
-			ECIESGOSTR3410Encryptor (const uint8_t * pub);
-			~ECIESGOSTR3410Encryptor ();
-			void Encrypt (const uint8_t * data, uint8_t * encrypted, BN_CTX * ctx, bool zeroPadding);
-
-		private:
-
-			EC_POINT * m_PublicKey;
-	};
-
-
-	class ECIESGOSTR3410Decryptor: public CryptoKeyDecryptor
-	{
-		public:
-
-			ECIESGOSTR3410Decryptor (const uint8_t * priv);
-			~ECIESGOSTR3410Decryptor ();
-			bool Decrypt (const uint8_t * encrypted, uint8_t * data, BN_CTX * ctx, bool zeroPadding);
-
-		private:
-
-			BIGNUM * m_PrivateKey;
-	};
-
-	void CreateECIESGOSTR3410RandomKeys (uint8_t * priv, uint8_t * pub);
 }
 }
 

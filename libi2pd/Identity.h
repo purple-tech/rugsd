@@ -55,7 +55,6 @@ namespace data
 	const uint16_t CRYPTO_KEY_TYPE_ELGAMAL = 0;
 	const uint16_t CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC = 1;
 	const uint16_t CRYPTO_KEY_TYPE_ECIES_P256_SHA256_AES256CBC_TEST = 65280; // TODO: remove later
-	const uint16_t CRYPTO_KEY_TYPE_ECIES_GOSTR3410_CRYPTO_PRO_A_SHA256_AES256CBC = 65281; // TODO: use GOST R 34.11 instead SHA256 and GOST 28147-89 instead AES
 
 	const uint16_t SIGNING_KEY_TYPE_DSA_SHA1 = 0;
 	const uint16_t SIGNING_KEY_TYPE_ECDSA_SHA256_P256 = 1;
@@ -66,9 +65,6 @@ namespace data
 	const uint16_t SIGNING_KEY_TYPE_RSA_SHA512_4096 = 6;
 	const uint16_t SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519 = 7;
 	const uint16_t SIGNING_KEY_TYPE_EDDSA_SHA512_ED25519ph = 8; // not implemented
-	// following signature type should never appear in netid=2
-	const uint16_t SIGNING_KEY_TYPE_GOSTR3410_CRYPTO_PRO_A_GOSTR3411_256 = 9;
-	const uint16_t SIGNING_KEY_TYPE_GOSTR3410_TC26_A_512_GOSTR3411_512 = 10; // approved by FSB
 
 	typedef uint16_t SigningKeyType;
 	typedef uint16_t CryptoKeyType;
