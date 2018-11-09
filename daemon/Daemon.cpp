@@ -25,8 +25,6 @@
 #include "UPnP.h"
 #include "util.h"
 
-#include "Event.h"
-
 namespace i2p
 {
 	namespace util
@@ -40,8 +38,6 @@ namespace i2p
 			std::unique_ptr<i2p::http::HTTPServer> httpServer;
 			std::unique_ptr<i2p::client::I2PControlService> m_I2PControlService;
 			std::unique_ptr<i2p::transport::UPnP> UPnP;
-#ifdef WITH_EVENTS
-#endif
 		};
 
 		Daemon_Singleton::Daemon_Singleton() : isDaemon(false), running(true), d(*new Daemon_Singleton_Private()) {}
@@ -328,9 +324,6 @@ namespace i2p
 
 		bool Daemon_Singleton::stop()
 		{
-#ifdef WITH_EVENTS
-			i2p::event::core.SetListener(nullptr);
-#endif
 			LogPrint(eLogInfo, "Daemon: shutting down");
 			LogPrint(eLogInfo, "Daemon: stopping Client");
 			i2p::client::context.Stop();

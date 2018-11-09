@@ -13,9 +13,6 @@
 #include "Config.h"
 #include "Tunnel.h"
 #include "TunnelPool.h"
-#ifdef WITH_EVENTS
-#include "Event.h"
-#endif
 
 namespace i2p
 {
@@ -34,9 +31,6 @@ namespace tunnel
 
 	void Tunnel::Build (uint32_t replyMsgID, std::shared_ptr<OutboundTunnel> outboundTunnel)
 	{
-#ifdef WITH_EVENTS
-		std::string peers = i2p::context.GetIdentity()->GetIdentHash().ToBase64();
-#endif
 		auto numHops = m_Config->GetNumHops ();
 		int numRecords = numHops <= STANDARD_NUM_RECORDS ? STANDARD_NUM_RECORDS : numHops;
 		auto msg = NewI2NPShortMessage ();
@@ -63,15 +57,9 @@ namespace tunnel
 			hop->CreateBuildRequestRecord (records + idx*TUNNEL_BUILD_RECORD_SIZE, msgID, ctx);
 			hop->recordIndex = idx;
 			i++;
-#ifdef WITH_EVENTS
-			peers += ":" + hop->ident->GetIdentHash().ToBase64();
-#endif
 			hop = hop->next;
 		}
 		BN_CTX_free (ctx);
-#ifdef WITH_EVENTS
-		EmitTunnelEvent("tunnel.build", this, peers);
-#endif
 		// fill up fake records with random data
 		for (int i = numHops; i < numRecords; i++)
 		{
@@ -206,9 +194,6 @@ namespace tunnel
 	void Tunnel::SetState(TunnelState state)
 	{
 		m_State = state;
-#ifdef WITH_EVENTS
-		EmitTunnelEvent("tunnel.state", this, state);
-#endif
 	}
 
 
@@ -613,9 +598,6 @@ namespace tunnel
 								hop = hop->next;
 							}
 						}
-#ifdef WITH_EVENTS
-						EmitTunnelEvent("tunnel.state", tunnel.get(), eTunnelStateBuildFailed);
-#endif
 						// for i2lua
 						if(pool) pool->OnTunnelBuildResult(tunnel, eBuildResultTimeout);
 						// delete
@@ -627,9 +609,6 @@ namespace tunnel
 				break;
 				case eTunnelStateBuildFailed:
 					LogPrint (eLogDebug, "Tunnel: pending build request ", it->first, " failed, deleted");
-#ifdef WITH_EVENTS
-					EmitTunnelEvent("tunnel.state", tunnel.get(), eTunnelStateBuildFailed);
-#endif
 					// for i2lua
 					if(pool) pool->OnTunnelBuildResult(tunnel, eBuildResultRejected);
 
