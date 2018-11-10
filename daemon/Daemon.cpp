@@ -9,7 +9,6 @@
 #include "Base.h"
 #include "version.h"
 #include "Transports.h"
-#include "NTCPSession.h"
 #include "RouterInfo.h"
 #include "RouterContext.h"
 #include "Tunnel.h"
@@ -276,14 +275,12 @@ namespace i2p
 				d.UPnP->Start ();
 			}
 
-			bool ntcp; i2p::config::GetOption("ntcp", ntcp);
 			bool ssu; i2p::config::GetOption("ssu", ssu);
 			LogPrint(eLogInfo, "Daemon: starting Transports");
 			if(!ssu) LogPrint(eLogInfo, "Daemon: ssu disabled");
-			if(!ntcp) LogPrint(eLogInfo, "Daemon: ntcp disabled");
 
-			i2p::transport::transports.Start(ntcp, ssu);
-			if (i2p::transport::transports.IsBoundNTCP() || i2p::transport::transports.IsBoundSSU() || i2p::transport::transports.IsBoundNTCP2()) 
+			i2p::transport::transports.Start(ssu);
+			if (i2p::transport::transports.IsBoundSSU() || i2p::transport::transports.IsBoundNTCP2()) 
 				LogPrint(eLogInfo, "Daemon: Transports started");
 			else 
 			{

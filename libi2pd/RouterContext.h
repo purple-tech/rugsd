@@ -100,7 +100,6 @@ namespace i2p
 			void SetSupportsV6 (bool supportsV6);
 			void SetSupportsV4 (bool supportsV4);
 
-			void UpdateNTCPV6Address (const boost::asio::ip::address& host); // called from NTCP session
 			void UpdateNTCP2V6Address (const boost::asio::ip::address& host); // called from NTCP2 session
 			void UpdateStats ();
 			void UpdateTimestamp (uint64_t ts); // in seconds, called from NetDb before publishing

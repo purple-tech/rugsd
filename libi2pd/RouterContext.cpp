@@ -51,7 +51,6 @@ namespace i2p
 		bool ipv4; i2p::config::GetOption("ipv4", ipv4);
 		bool ipv6; i2p::config::GetOption("ipv6", ipv6);
 		bool ssu;    i2p::config::GetOption("ssu", ssu);
-		bool ntcp;   i2p::config::GetOption("ntcp", ntcp);
 		bool ntcp2;  i2p::config::GetOption("ntcp2.enabled", ntcp2);
 		bool nat;  i2p::config::GetOption("nat", nat);	
 		std::string ifname; i2p::config::GetOption("ifname", ifname);
@@ -71,8 +70,6 @@ namespace i2p
 
 			if (ssu)
 				routerInfo.AddSSUAddress (host.c_str(), port, routerInfo.GetIdentHash ());
-			if (ntcp)
-				routerInfo.AddNTCPAddress (host.c_str(), port);
 		}
 		if (ipv6)
 		{
@@ -87,8 +84,6 @@ namespace i2p
 
 			if (ssu)
 				routerInfo.AddSSUAddress (host.c_str(), port, routerInfo.GetIdentHash ());
-			if (ntcp)
-				routerInfo.AddNTCPAddress (host.c_str(), port);
 		}
 
 		routerInfo.SetCaps (i2p::data::RouterInfo::eReachable |
@@ -341,18 +336,8 @@ namespace i2p
 		caps &= ~i2p::data::RouterInfo::eFloodfill;	// can't be floodfill
 		caps &= ~i2p::data::RouterInfo::eSSUIntroducer; // can't be introducer
 		m_RouterInfo.SetCaps (caps);
-		// remove NTCP address
-		auto& addresses = m_RouterInfo.GetAddresses ();
-		for (auto it = addresses.begin (); it != addresses.end (); ++it)
-		{
-			if ((*it)->transportStyle == i2p::data::RouterInfo::eTransportNTCP && !(*it)->IsNTCP2 () &&
-				(*it)->host.is_v4 ())
-			{
-				addresses.erase (it);
-				break;
-			}
-		}
 		// delete previous introducers
+		auto& addresses = m_RouterInfo.GetAddresses ();
 		for (auto& addr : addresses)
 			if (addr->ssu)
 				addr->ssu->introducers.clear ();
@@ -373,20 +358,6 @@ namespace i2p
 		m_RouterInfo.SetCaps (caps);
 
 		auto& addresses = m_RouterInfo.GetAddresses ();
-		// insert NTCP back
-		bool ntcp;   i2p::config::GetOption("ntcp", ntcp);
-		if (ntcp) {
-			for (const auto& addr : addresses)
-			{
-				if (addr->transportStyle == i2p::data::RouterInfo::eTransportSSU &&
-					addr->host.is_v4 ())
-				{
-					// insert NTCP address with host/port from SSU
-					m_RouterInfo.AddNTCPAddress (addr->host.to_string ().c_str (), addr->port);
-					break;
-				}
-			}
-		}
 		// delete previous introducers
 		for (auto& addr : addresses)
 			if (addr->ssu)
@@ -414,45 +385,6 @@ namespace i2p
 		UpdateRouterInfo ();
 	}
 
-
-	void RouterContext::UpdateNTCPV6Address (const boost::asio::ip::address& host)
-	{
-		bool updated = false, found = false;
-		int port = 0;
-		auto& addresses = m_RouterInfo.GetAddresses ();
-		for (auto& addr: addresses)
-		{
-			if (addr->host.is_v6 () && addr->transportStyle == i2p::data::RouterInfo::eTransportNTCP)
-			{
-				if (addr->host != host)
-				{
-					addr->host = host;
-					updated = true;
-				}
-				found = true;
-			}
-			else
-				port = addr->port;
-		}
-		if (!found)
-		{
-			// create new address
-			m_RouterInfo.AddNTCPAddress (host.to_string ().c_str (), port);
-			auto mtu = i2p::util::net::GetMTU (host);
-			if (mtu)
-			{
-				LogPrint (eLogDebug, "Router: Our v6 MTU=", mtu);
-				if (mtu > 1472) { // TODO: magic constant
-					mtu = 1472;
-					LogPrint(eLogWarning, "Router: MTU dropped to upper limit of 1472 bytes");
-				}
-			}
-			m_RouterInfo.AddSSUAddress (host.to_string ().c_str (), port, GetIdentHash (), mtu ? mtu : 1472); // TODO
-			updated = true;
-		}
-		if (updated)
-			UpdateRouterInfo ();
-	}
 
 	void RouterContext::UpdateNTCP2V6Address (const boost::asio::ip::address& host)
 	{

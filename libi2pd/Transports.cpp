@@ -113,7 +113,7 @@ namespace transport
 	Transports::Transports ():
 		m_IsOnline (true), m_IsRunning (false), m_IsNAT (true), m_Thread (nullptr), m_Service (nullptr),
 		m_Work (nullptr), m_PeerCleanupTimer (nullptr), m_PeerTestTimer (nullptr),
-		m_NTCPServer (nullptr), m_SSUServer (nullptr), m_NTCP2Server (nullptr),
+		m_SSUServer (nullptr), m_NTCP2Server (nullptr),
 		m_DHKeysPairSupplier (5), // 5 pre-generated keys
 		m_TotalSentBytes(0), m_TotalReceivedBytes(0), m_TotalTransitTransmittedBytes (0),
 		m_InBandwidth (0), m_OutBandwidth (0), m_TransitBandwidth(0),
@@ -134,7 +134,7 @@ namespace transport
 		}
 	}
 
-	void Transports::Start (bool enableNTCP, bool enableSSU)
+	void Transports::Start (bool enableSSU)
 	{
 		if (!m_Service)
 		{
@@ -148,46 +148,7 @@ namespace transport
 		m_DHKeysPairSupplier.Start ();
 		m_IsRunning = true;
 		m_Thread = new std::thread (std::bind (&Transports::Run, this));
-		std::string ntcpproxy; i2p::config::GetOption("ntcpproxy", ntcpproxy);
 		i2p::http::URL proxyurl;
-		uint16_t softLimit, hardLimit, threads;
-		i2p::config::GetOption("limits.ntcpsoft", softLimit);
-		i2p::config::GetOption("limits.ntcphard", hardLimit);
-		i2p::config::GetOption("limits.ntcpthreads", threads);
-		if(softLimit > 0 && hardLimit > 0 && softLimit >= hardLimit)
-		{
-			LogPrint(eLogError, "ntcp soft limit must be less than ntcp hard limit");
-			return;
-		}
-		if(ntcpproxy.size() && enableNTCP)
-		{
-			if(proxyurl.parse(ntcpproxy))
-			{
-				if(proxyurl.schema == "socks" || proxyurl.schema == "http")
-				{
-					m_NTCPServer = new NTCPServer(threads);
-					m_NTCPServer->SetSessionLimits(softLimit, hardLimit);
-					NTCPServer::ProxyType proxytype = NTCPServer::eSocksProxy;
-
-					if (proxyurl.schema == "http")
-						proxytype = NTCPServer::eHTTPProxy;
-					m_NTCPServer->UseProxy(proxytype, proxyurl.host, proxyurl.port) ;
-					m_NTCPServer->Start();
-					if(!m_NTCPServer->NetworkIsReady())
-					{
-						LogPrint(eLogError, "Transports: NTCP failed to start with proxy");
-						m_NTCPServer->Stop();
-						delete m_NTCPServer;
-						m_NTCPServer = nullptr;
-					}
-				}
-				else
-					LogPrint(eLogError, "Transports: unsupported NTCP proxy URL ", ntcpproxy);
-			}
-			else
-				LogPrint(eLogError, "Transports: invalid NTCP proxy url ", ntcpproxy);
-			return;
-		}
 		// create NTCP2. TODO: move to acceptor	
 		bool ntcp2;  i2p::config::GetOption("ntcp2.enabled", ntcp2);
 		if (ntcp2)
@@ -201,19 +162,6 @@ namespace transport
 		for (const auto& address : addresses)
 		{
 			if (!address) continue;
-			if (m_NTCPServer == nullptr && enableNTCP)
-			{
-				m_NTCPServer = new NTCPServer (threads);
-				m_NTCPServer->SetSessionLimits(softLimit, hardLimit);
-				m_NTCPServer->Start ();
-				if (!(m_NTCPServer->IsBoundV6() || m_NTCPServer->IsBoundV4())) {
-					/** failed to bind to NTCP */
-					LogPrint(eLogError, "Transports: failed to bind to TCP");
-					m_NTCPServer->Stop();
-					delete m_NTCPServer;
-					m_NTCPServer = nullptr;
-				}
-			}
 
 			if (address->transportStyle == RouterInfo::eTransportSSU)
 			{
@@ -258,12 +206,6 @@ namespace transport
 			m_SSUServer->Stop ();
 			delete m_SSUServer;
 			m_SSUServer = nullptr;
-		}
-		if (m_NTCPServer)
-		{
-			m_NTCPServer->Stop ();
-			delete m_NTCPServer;
-			m_NTCPServer = nullptr;
 		}
 
 		if (m_NTCP2Server)
@@ -409,66 +351,6 @@ namespace transport
 					}	
 				}	
 			}
-			if (peer.numAttempts == 1) // NTCP1
-			{
-				peer.numAttempts++;	
-				auto address = peer.router->GetNTCPAddress (!context.SupportsV6 ());
-				if (address && m_NTCPServer)
-				{
-#if BOOST_VERSION >= 104900
-					if (!address->host.is_unspecified ()) // we have address now
-#else
-					boost::system::error_code ecode;
-				  address->host.to_string (ecode);
-					if (!ecode)
-#endif
-					{
-						if (!peer.router->UsesIntroducer () && !peer.router->IsUnreachable ())
-						{
-							if(!m_NTCPServer->ShouldLimit())
-							{
-								auto s = std::make_shared<NTCPSession> (*m_NTCPServer, peer.router);
-								if(m_NTCPServer->UsingProxy())
-								{
-									NTCPServer::RemoteAddressType remote = NTCPServer::eIP4Address;
-									std::string addr = address->host.to_string();
-
-									if(address->host.is_v6())
-										remote = NTCPServer::eIP6Address;
-
-									m_NTCPServer->ConnectWithProxy(addr, address->port, remote, s);
-								}
-								else
-									m_NTCPServer->Connect (address->host, address->port, s);
-								return true;
-							}
-							else
-							{
-								LogPrint(eLogWarning, "Transports: NTCP Limit hit falling back to SSU");
-							}
-						}
-					}
-					else // we don't have address
-					{
-						if (address->addressString.length () > 0) // trying to resolve
-						{
-							if(m_NTCPServer->UsingProxy())
-							{
-								auto s = std::make_shared<NTCPSession> (*m_NTCPServer, peer.router);
-								m_NTCPServer->ConnectWithProxy(address->addressString, address->port, NTCPServer::eHostname, s);
-							}
-							else
-							{
-								LogPrint (eLogDebug, "Transports: Resolving NTCP ", address->addressString);
-								NTCPResolve (address->addressString, ident);
-							}
-							return true;
-						}
-					}
-				}
-				else
-					LogPrint (eLogDebug, "Transports: NTCP address is not present for ", i2p::data::GetIdentHashAbbreviation (ident), ", trying SSU");
-			}
 			if (peer.numAttempts == 2)// SSU
 			{
 				peer.numAttempts++;
@@ -497,7 +379,7 @@ namespace transport
 					}
 				}
 			}
-			LogPrint (eLogInfo, "Transports: No NTCP or SSU addresses available");
+			LogPrint (eLogInfo, "Transports: No NTCP2 or SSU addresses available");
 			peer.Done ();
 			std::unique_lock<std::mutex> l(m_PeersMutex);
 			m_Peers.erase (ident);
@@ -534,49 +416,6 @@ namespace transport
 				std::unique_lock<std::mutex> l(m_PeersMutex);
 				m_Peers.erase (it);
 			}
-		}
-	}
-
-	void Transports::NTCPResolve (const std::string& addr, const i2p::data::IdentHash& ident)
-	{
-		auto resolver = std::make_shared<boost::asio::ip::tcp::resolver>(*m_Service);
-		resolver->async_resolve (boost::asio::ip::tcp::resolver::query (addr, ""),
-			std::bind (&Transports::HandleNTCPResolve, this,
-				std::placeholders::_1, std::placeholders::_2, ident, resolver));
-	}
-
-	void Transports::HandleNTCPResolve (const boost::system::error_code& ecode, boost::asio::ip::tcp::resolver::iterator it,
-		i2p::data::IdentHash ident, std::shared_ptr<boost::asio::ip::tcp::resolver> resolver)
-	{
-		auto it1 = m_Peers.find (ident);
-		if (it1 != m_Peers.end ())
-		{
-			auto& peer = it1->second;
-			if (!ecode && peer.router)
-			{
-				while (it != boost::asio::ip::tcp::resolver::iterator())
-				{
-					auto address = (*it).endpoint ().address ();
-					LogPrint (eLogDebug, "Transports: ", (*it).host_name (), " has been resolved to ", address);
-					if (address.is_v4 () || context.SupportsV6 ())
-					{
-						auto addr = peer.router->GetNTCPAddress (); // TODO: take one we requested
-						if (addr)
-						{
-							auto s = std::make_shared<NTCPSession> (*m_NTCPServer, peer.router);
-							m_NTCPServer->Connect (address, addr->port, s);
-							return;
-						}
-						break;
-					}
-					else
-						LogPrint (eLogInfo, "Transports: NTCP ", address, " is not supported");
-					it++;
-				}
-			}
-			LogPrint (eLogError, "Transports: Unable to resolve NTCP address: ", ecode.message ());
-			std::unique_lock<std::mutex> l(m_PeersMutex);
-			m_Peers.erase (it1);
 		}
 	}
 
@@ -635,12 +474,6 @@ namespace transport
 		{
 			m_SSUServer->DeleteSession (ssuSession);
 			LogPrint (eLogDebug, "Transports: SSU session closed");
-		}
-		auto ntcpSession = m_NTCPServer ? m_NTCPServer->FindNTCPSession(router->GetIdentHash()) : nullptr;
-		if (ntcpSession) // try deleting ntcp session too
-		{
-			ntcpSession->Terminate ();
-			LogPrint(eLogDebug, "Transports: NTCP session closed");
 		}
 	}
 
